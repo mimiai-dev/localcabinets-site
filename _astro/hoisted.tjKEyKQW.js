@@ -1,0 +1,1 @@
+import"./hoisted.hMI5plOY.js";const e=document.querySelector(".factory-vid");if(e){e.addEventListener("loadedmetadata",()=>{e.playbackRate=.5});const t=()=>{e.playbackRate=.5,e.play().catch(()=>{})};if("IntersectionObserver"in window){const n=new IntersectionObserver(o=>{for(const r of o)r.isIntersecting&&(t(),n.disconnect())},{rootMargin:"200px"});n.observe(e)}else t()}
