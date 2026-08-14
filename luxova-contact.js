@@ -7,7 +7,8 @@
  *           data-wechat-qr="/img/wechat-qr.png"
  *           data-hours="Mon-Sat 09:00-18:00"
  *           data-timezone="Asia/Bangkok"
- *           data-agent-name="Hannah Harper"></script>
+ *           data-agent-name="Hannah Harper"
+ *           data-whatsapp-label="..."></script>   optional, VERBATIM, no default
  *
  * ⛔ THIS SENDS NOTHING. It is two links and a string to copy. It does not talk
  * to the relay, it does not need `web-customer-service` in LIVE_CHANNELS, and it
@@ -153,6 +154,42 @@
   // =========================================================================
   // RENDER
   // =========================================================================
+  // =========================================================================
+  // ⛔ THE SECOND OPTION: ON-SITE LIVE SUPPORT, AND WHY IT IS DARK.
+  //
+  // The owner wants a chooser: WhatsApp, or chat with us here. WhatsApp works
+  // today because it is a LINK to a phone a human answers. The on-site path
+  // cannot answer anyone yet:
+  //
+  //   - `web-customer-service` is NOT in LIVE_CHANNELS
+  //   - it has no voice gate yet; it is building one
+  //   - without that gate it would post whatever text it was handed, which is
+  //     the 2026-08-10 failure with a different logo, on our own site, in
+  //     front of real buyers
+  //
+  // ⛔ A CHAT BOX THAT ACCEPTS A MESSAGE AND NEVER ANSWERS IS WORSE THAN NO
+  // CHAT BOX. The buyer believes they have reached us and stops looking for
+  // another way. So the dark state accepts NO input. It is a statement and a
+  // redirect, not a form.
+  //
+  // ⛔ AND THE WORDS ARE NOT MINE. This desk owns the mechanism;
+  // `web-customer-service` owns the voice. The copy arrives through
+  // `data-chat-*` attributes, and if it is absent THE OPTION DOES NOT RENDER.
+  // It is not defaulted, because a default would be me writing another desk's
+  // words and then nobody ever noticing that I had.
+  //
+  // TO GO LIVE LATER: set data-chat-live="yes" once the gate exists and the
+  // channel is in LIVE_CHANNELS. Same chooser, one attribute, no redesign.
+  // =========================================================================
+  var chat = {
+    label: (d.chatLabel || '').trim(),
+    status: (d.chatStatus || '').trim(),
+    redirect: (d.chatRedirect || '').trim(),
+    aria: (d.chatAria || '').trim(),
+    live: (d.chatLive || '').trim().toLowerCase() === 'yes',
+  }
+  chat.hasCopy = Boolean(chat.label && chat.status)
+
   var waRaw = d.whatsapp || ''
   var waProblem = phoneProblem(waRaw)
   var wechatId = (d.wechatId || '').trim()
@@ -160,6 +197,10 @@
 
   if (waProblem) log(waProblem + ' -- the WhatsApp button will NOT be rendered.')
   if (!wechatId && !wechatQr) log('no data-wechat-id and no data-wechat-qr -- the WeChat block will NOT be rendered.')
+  if (!chat.hasCopy && (d.chatLive || d.chatRedirect || d.chatAria)) {
+    log('the on-site chat option is configured but has no data-chat-label and data-chat-status. ' +
+        'Those words belong to web-customer-service and are NOT defaulted here. The option will NOT render.')
+  }
   if (waProblem && !wechatId && !wechatQr) {
     log('nothing to render. Set data-whatsapp and/or data-wechat-id. Refusing to show an empty contact card.')
     return
@@ -213,6 +254,7 @@
 
   var presence = presenceFor({ hours: d.hours, timezone: d.timezone })
   var name = (d.agentName || '').trim()
+  var waLabel = (d.whatsappLabel || '').trim()
   var repliesWithin = (d.repliesWithin || '').trim()
 
   var css = document.createElement('style')
@@ -257,6 +299,9 @@
     '.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}',
     '.qr{display:block;margin:10px auto 0;width:148px;height:148px;border:1px solid var(--lux-line);border-radius:7px}',
     '.note{font-size:11.5px;color:var(--lux-soft);margin:10px 0 0;line-height:1.45}',
+    '.chat{margin-top:10px;padding:10px 12px;border:1px dashed var(--lux-line);border-radius:7px;background:transparent}',
+    '.chat-l{margin:0;font-size:13.5px;font-weight:600;color:var(--lux-ink)}',
+    '.chat-s{margin:4px 0 0;font-size:12px;color:var(--lux-soft);line-height:1.45}',
     '@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}',
   ].join('')
   root.appendChild(css)
@@ -292,8 +337,46 @@
     wa.target = '_blank'
     wa.rel = 'noopener noreferrer'
     wa.appendChild(icon('M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3.2-.7-2.7-1.1-4.4-3.9-4.5-4-.1-.2-1-1.4-1-2.6 0-1.2.6-1.8.9-2 .2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.7 2.1 1.1 1 2 1.3 2.3 1.4.2.1.4.1.5-.1l.7-.9c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.6 0 1Z'))
-    wa.appendChild(document.createTextNode('WhatsApp'))
+    // ⛔ THE WHOLE LABEL, VERBATIM, OR THE DEFAULT. Never a name formatted into
+    // a sentence: the owner asked for WhatsApp to be labelled for Hayden and the
+    // chat for Hannah Harper, same number under two names, and deciding whether
+    // that reads "WhatsApp Hayden" or "Hayden on WhatsApp" is COPY. This desk
+    // owns the slot; whoever owns the voice supplies the words. Absent, the
+    // button reads exactly as it did before, which is not a guess.
+    wa.appendChild(document.createTextNode(waLabel || 'WhatsApp'))
     card.appendChild(wa)
+  }
+
+  // ⛔ THE DARK OPTION. Rendered as a statement, never as an input.
+  if (chat.hasCopy && !chat.live) {
+    var box = document.createElement('div')
+    box.className = 'chat dark'
+    var cl = document.createElement('p')
+    cl.className = 'chat-l'
+    cl.textContent = chat.label
+    box.appendChild(cl)
+    var cs2 = document.createElement('p')
+    cs2.className = 'chat-s'
+    cs2.textContent = chat.status
+    box.appendChild(cs2)
+    if (chat.redirect) {
+      var cr = document.createElement('p')
+      cr.className = 'chat-s'
+      cr.textContent = chat.redirect
+      box.appendChild(cr)
+    }
+    if (chat.aria) box.setAttribute('aria-label', chat.aria)
+    // ⛔ NO input, NO textarea, NO form, NO submit. There is nothing to type
+    // into, so a visitor cannot leave a message that nobody will read.
+    card.appendChild(box)
+  } else if (chat.hasCopy && chat.live) {
+    // ⛔ LIVE PATH, DELIBERATELY NOT BUILT YET. Reaching a buyer is the send
+    // wall's business, and this file does not cross it. When the gate lands,
+    // the chat surface is mounted here and nowhere else.
+    var pending = document.createElement('p')
+    pending.className = 'chat-s'
+    pending.textContent = chat.status
+    card.appendChild(pending)
   }
 
   // =========================================================================
