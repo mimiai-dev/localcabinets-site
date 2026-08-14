@@ -195,6 +195,28 @@
   var wechatId = (d.wechatId || '').trim()
   var wechatQr = (d.wechatQr || '').trim()
 
+  // ⛔ THE SUBTITLE IS DERIVED, NEVER TYPED. Copy is web-customer-service's,
+  // routed by the team lead as CONTACT CARD SUBTITLE v1, placed verbatim.
+  //
+  // Their instruction and the reason for it: "DERIVE IT FROM CONFIG. DO NOT
+  // HARDCODE ANY OF THE FOUR. The live bug is not that someone wrote a wrong
+  // sentence, it is that a claim about what exists was frozen into a string
+  // while the thing it described was not there."
+  //
+  // So if WeChat is switched on tomorrow the line follows with no copy edit, and
+  // if WhatsApp is switched off it stops claiming WhatsApp the same day.
+  //
+  // ⛔ THE FOURTH CASE IS A REFUSAL AND IT RETURNS null. "If no channel is
+  // configured, render no subtitle at all. I will not write a sentence for that
+  // state, because every sentence I could write would name a route I cannot
+  // verify exists." A sentence is not invented here to fill the gap.
+  var contactSubtitle = function (hasWhatsApp, hasWeChat) {
+    if (hasWhatsApp && hasWeChat) return 'Message us on WhatsApp or WeChat.'
+    if (hasWhatsApp) return 'Message us on WhatsApp.'
+    if (hasWeChat) return 'Message us on WeChat.'
+    return null
+  }
+
   if (waProblem) log(waProblem + ' -- the WhatsApp button will NOT be rendered.')
   if (!wechatId && !wechatQr) log('no data-wechat-id and no data-wechat-qr -- the WeChat block will NOT be rendered.')
   if (!chat.hasCopy && (d.chatLive || d.chatRedirect || d.chatAria)) {
@@ -315,6 +337,7 @@
   hd.textContent = name ? ('Message ' + name) : 'Message us'
   card.appendChild(hd)
 
+
   var sub = document.createElement('p')
   sub.className = 'sub'
   if (presence) {
@@ -326,9 +349,23 @@
     sub.textContent = 'Usually replies within ' + repliesWithin
   } else {
     // ⛔ NO AVAILABILITY CLAIM. See the note above presenceFor.
-    sub.textContent = 'We answer on WhatsApp and WeChat.'
+    //
+    // ⛔ AND NO CHANNEL CLAIM THAT IS NOT TRUE. This line was the hardcoded
+    // sentence 'We answer on WhatsApp and WeChat.', which rendered even when
+    // WeChat was not configured at all. That is the live bug the team lead
+    // described when routing CONTACT CARD SUBTITLE v1: "a claim about what
+    // exists was frozen into a string while the thing it described was not
+    // there." Found still present on 2026-08-15 by driving the widget with
+    // WhatsApp only and reading the DOM back.
+    //
+    // Derived from the same values the buttons are, so the sentence and the
+    // buttons cannot disagree.
+    sub.textContent = contactSubtitle(!waProblem, Boolean(wechatId || wechatQr)) || ''
   }
-  card.appendChild(sub)
+  // ⛔ THE FOURTH CASE RENDERS NOTHING, not an empty line. web-customer-service
+  // refused to write a sentence for the no-channel state, and an empty <p> is a
+  // sentence-shaped hole rather than a refusal.
+  if (sub.textContent || (sub.children && sub.children.length)) card.appendChild(sub)
 
   if (!waProblem) {
     var wa = document.createElement('a')
