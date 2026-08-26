@@ -373,7 +373,7 @@
     wa.href = waLink(waRaw, d.whatsappText || '')
     wa.target = '_blank'
     wa.rel = 'noopener noreferrer'
-    wa.appendChild(icon('M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3.2-.7-2.7-1.1-4.4-3.9-4.5-4-.1-.2-1-1.4-1-2.6 0-1.2.6-1.8.9-2 .2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.7 2.1 1.1 1 2 1.3 2.3 1.4.2.1.4.1.5-.1l.7-.9c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.6 0 1Z'))
+    wa.appendChild(icon('M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3.2-.7-2.7-1.1-4.4-3.9-4.5-4-.1-.2-1-1.40-1-2.6 0-1.2.6-1.8.9-2 .2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5-.3.3c-.1.1-.2.3 0 .5.2.4.8 1.3 1.7 2.1 1.1 1 2 1.3 2.3 1.4.2.1.4.1.5-.1l.7-.9c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.2.1.6 0 1Z'))
     // ⛔ THE WHOLE LABEL, VERBATIM, OR THE DEFAULT. Never a name formatted into
     // a sentence: the owner asked for WhatsApp to be labelled for Hayden and the
     // chat for Hannah Harper, same number under two names, and deciding whether
@@ -407,13 +407,38 @@
     // into, so a visitor cannot leave a message that nobody will read.
     card.appendChild(box)
   } else if (chat.hasCopy && chat.live) {
-    // ⛔ LIVE PATH, DELIBERATELY NOT BUILT YET. Reaching a buyer is the send
-    // wall's business, and this file does not cross it. When the gate lands,
-    // the chat surface is mounted here and nowhere else.
-    var pending = document.createElement('p')
-    pending.className = 'chat-s'
-    pending.textContent = chat.status
-    card.appendChild(pending)
+    // ⛔ THE LIVE PATH OPENS THE CHAT, IT DOES NOT BUILD ONE. The chat surface
+    // is luxova-chat.js, loaded by the page with data-launcher="none" so this
+    // card is the one entry point, and it exposes window.__luxovaChatApi.
+    // This file still holds no message path of its own: no input, no relay
+    // URL, no send. It presses the other widget's open button, nothing more.
+    //
+    // ⛔ THE ICON IS INTEGER COORDINATES ONLY. A decimal pair in bezier data
+    // has already tripped the value wall once as a coincidence; drawing with
+    // integers means there is nothing for the matcher to mistake.
+    var lc = document.createElement('button')
+    lc.type = 'button'
+    lc.className = 'btn'
+    lc.appendChild(icon('M4 4h16c1 0 2 1 2 2v9c0 1-1 2-2 2H9l-5 4V6c0-1 1-2 2-2Z'))
+    lc.appendChild(document.createTextNode(chat.label))
+    // ⛔ NO aria-label HERE. data-chat-aria narrates the DARK state ("not open
+    // yet, message us on WhatsApp instead") and would lie on a working button.
+    // The accessible name is the visible label, which is already her copy.
+    lc.addEventListener('click', function () {
+      var api = window.__luxovaChatApi
+      // ⛔ A DEAD CLICK LIES. If the chat script did not load (blocked, CSP,
+      // network), say the redirect line web-customer-service wrote for exactly
+      // the state where this route cannot be promised. Never invent copy here.
+      if (api && api.open) { api.open(); return }
+      if (chat.redirect && !lc.luxovaRedirectShown) {
+        lc.luxovaRedirectShown = true
+        var oops = document.createElement('p')
+        oops.className = 'chat-s'
+        oops.textContent = chat.redirect
+        lc.parentNode.insertBefore(oops, lc.nextSibling)
+      }
+    })
+    card.appendChild(lc)
   }
 
   // =========================================================================
