@@ -324,18 +324,56 @@
     '.chat{margin-top:10px;padding:10px 12px;border:1px dashed var(--lux-line);border-radius:7px;background:transparent}',
     '.chat-l{margin:0;font-size:13.5px;font-weight:600;color:var(--lux-ink)}',
     '.chat-s{margin:4px 0 0;font-size:12px;color:var(--lux-soft);line-height:1.45}',
+    /* The card starts MINIMIZED: a round launcher, owner's ruling 2026-08-27.
+       A permanent 320px card on every page took the corner from the chat. */
+    '.fab{position:fixed;right:20px;bottom:20px;z-index:2147483000;width:56px;height:56px;',
+    'border-radius:50%;border:none;cursor:pointer;background:var(--lux-navy);color:#fff;',
+    'display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(8,20,34,.2);',
+    'transition:transform .2s ease}',
+    '.fab:hover{transform:scale(1.05)}',
+    '.fab svg{width:24px;height:24px}',
+    '.hide{display:none}',
+    '.hdrow{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}',
+    '.min{border:none;background:transparent;cursor:pointer;color:var(--lux-soft);',
+    'font-size:18px;line-height:1;padding:2px 6px;border-radius:7px}',
+    '.min:hover{color:var(--lux-ink);background:var(--lux-panel)}',
     '@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}',
   ].join('')
   root.appendChild(css)
 
   var card = document.createElement('div')
-  card.className = 'card'
+  card.className = 'card hide'
 
+  // ⛔ MINIMIZED BY DEFAULT, owner's ruling 2026-08-27. The card opens from a
+  // round launcher and folds back behind it: its own minimize control, and
+  // automatically when the live chat opens, so the two never share the corner.
+  var fab = document.createElement('button')
+  fab.type = 'button'
+  fab.className = 'fab'
+  fab.setAttribute('aria-label', name ? ('Contact ' + name) : 'Contact us')
+  fab.setAttribute('aria-expanded', 'false')
+  fab.appendChild(icon('M4 4h16c1 0 2 1 2 2v9c0 1-1 2-2 2H9l-5 4V6c0-1 1-2 2-2Z'))
+  function setCard(open) {
+    if (open) { card.className = 'card'; fab.className = 'fab hide' } else { card.className = 'card hide'; fab.className = 'fab' }
+    fab.setAttribute('aria-expanded', open ? 'true' : 'false')
+  }
+  fab.addEventListener('click', function () { setCard(true) })
+
+  var hdrow = document.createElement('div')
+  hdrow.className = 'hdrow'
   var hd = document.createElement('p')
   hd.className = 'hd'
   // ⛔ textContent everywhere. Nothing here is ever innerHTML'd.
   hd.textContent = name ? ('Message ' + name) : 'Message us'
-  card.appendChild(hd)
+  hdrow.appendChild(hd)
+  var minb = document.createElement('button')
+  minb.type = 'button'
+  minb.className = 'min'
+  minb.setAttribute('aria-label', 'Minimize')
+  minb.textContent = '−'
+  minb.addEventListener('click', function () { setCard(false) })
+  hdrow.appendChild(minb)
+  card.appendChild(hdrow)
 
 
   var sub = document.createElement('p')
@@ -429,7 +467,9 @@
       // ⛔ A DEAD CLICK LIES. If the chat script did not load (blocked, CSP,
       // network), say the redirect line web-customer-service wrote for exactly
       // the state where this route cannot be promised. Never invent copy here.
-      if (api && api.open) { api.open(); return }
+      // On success the card FOLDS AWAY: the chat panel takes the corner, and
+      // two surfaces stacked there is the bug this line exists to prevent.
+      if (api && api.open) { setCard(false); api.open(); return }
       if (chat.redirect && !lc.luxovaRedirectShown) {
         lc.luxovaRedirectShown = true
         var oops = document.createElement('p')
@@ -486,6 +526,7 @@
     }
   }
 
+  root.appendChild(fab)
   root.appendChild(card)
   document.body.appendChild(host)
   }
