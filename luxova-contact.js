@@ -358,6 +358,18 @@
     fab.setAttribute('aria-expanded', open ? 'true' : 'false')
   }
   fab.addEventListener('click', function () { setCard(true) })
+  // The chat widget announces its open and close on the document, and the
+  // card yields the corner both ways: chat open means NOTHING of ours shows,
+  // chat closed means the launcher comes back. Like a chat app.
+  document.addEventListener('luxova-chat', function (e) {
+    if (e && e.detail && e.detail.open) {
+      card.className = 'card hide'
+      fab.className = 'fab hide'
+      fab.setAttribute('aria-expanded', 'false')
+    } else {
+      setCard(false)
+    }
+  })
 
   var hdrow = document.createElement('div')
   hdrow.className = 'hdrow'

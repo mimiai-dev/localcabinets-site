@@ -16,10 +16,12 @@
  * the chat widget's open control when that widget is present, and falls back
  * to dismissing itself when it is not: a button that does nothing is a lie.
  *
- * ⛔ ALWAYS SHOWN, owner's ruling 2026-08-27: every page load, dismissible for
- * that view, no storage read or written. "Always show" was chosen over
- * once-per-session by the owner, so do not add a suppression cookie here
- * without the owner saying so.
+ * ⛔ SHOWN WITH A COOLDOWN, owner's ruling 2026-08-27 (superseding the earlier
+ * always-show, same day, owner's words: "can we like have a time out for it...
+ * otherwise it always showing when user navigate which is annoying"). Closing
+ * it, by any route, holds it down for COOLDOWN_MS; after that it shows again.
+ * Storage failing (private mode) means it shows, never that it hides: the
+ * failure direction is the one the owner chose to risk.
  */
 (function () {
   'use strict'
@@ -40,6 +42,18 @@
     if (headline || offer || code || cta) log('data-headline and data-offer are both required. The popup will NOT render.')
     return
   }
+
+  // The cooldown. Read failure means SHOW: a visitor seeing the sale twice is
+  // the cheap direction, a sale nobody sees is the expensive one.
+  var SEEN_KEY = 'luxova_sale_seen'
+  var COOLDOWN_MS = 12 * 60 * 60 * 1000
+  function withinCooldown() {
+    try { return (Date.now() - Number(localStorage.getItem(SEEN_KEY) || 0)) < COOLDOWN_MS } catch (e) { return false }
+  }
+  function markSeen() {
+    try { localStorage.setItem(SEEN_KEY, String(Date.now())) } catch (e) { /* private mode: it will just show again */ }
+  }
+  if (withinCooldown()) return
 
   function build() {
     if (!document.body) return
@@ -141,7 +155,10 @@
       box.appendChild(go)
     }
 
-    function dismiss() { try { host.remove() } catch (e) { if (host.parentNode) host.parentNode.removeChild(host) } }
+    function dismiss() {
+      markSeen()
+      try { host.remove() } catch (e) { if (host.parentNode) host.parentNode.removeChild(host) }
+    }
     x.addEventListener('click', dismiss)
     veil.addEventListener('click', function (e) { if (e.target === veil) dismiss() })
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dismiss() })
