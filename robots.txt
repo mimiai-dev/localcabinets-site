@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://luxovahome.com/sitemap-index.xml
+Sitemap: https://thelocalcabinets.com/sitemap-index.xml
